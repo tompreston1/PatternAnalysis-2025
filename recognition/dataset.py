@@ -1,22 +1,42 @@
 import os
-from PIL import Image
-import torch
+import cv2
+import numpy as np
 from torch.utils.data import Dataset
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 class ADNIDataset(Dataset):
-    def __init__(self, samples, transform=None):
+    """
+    Loads individual MRI slices as images for Alzheimer’s vs Control classification.
+    - Supports grayscale or RGB input
+    - Applies percentile clipping + normalization for consistency
+    """
+    def __init__(self, samples, transform=None, rgb=True):
         self.samples = samples
         self.transform = transform
+        self.rgb = rgb
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
         path, label = self.samples[idx]
-        img = Image.open(path).convert("RGB")
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+
+        # Percentile clipping (reduces brightness outliers)
+        p1, p99 = np.percentile(img, (1, 99))
+        img = np.clip(img, p1, p99)
+        img = (img - img.min()) / (img.max() - img.min() + 1e-8)
+        img = (img * 255).astype(np.uint8)
+
+        # Convert to RGB if required
+        if self.rgb:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+        # Apply transformations
         if self.transform:
-            img = self.transform(img)
-        label = torch.tensor(label, dtype=torch.long)
+            img = self.transform(image=img)["image"]
+
         return img, label
 
 
@@ -32,7 +52,7 @@ def scan_folder(base_dir):
         for f in files:
             if f.lower().endswith(('.jpg', '.jpeg', '.png')):
                 path = os.path.join(root, f)
-                # ✅ Label only based on final directory name
+                # Label only based on final directory name
                 folder = os.path.basename(os.path.dirname(path)).lower()
                 if folder == 'ad':
                     label = 1
@@ -42,3 +62,29 @@ def scan_folder(base_dir):
                     continue
                 samples.append((path, label))
     return samples
+
+def get_transforms(train=True, size=224, rgb=True):
+    """
+    Returns simple, fast Albumentations transforms.
+    - Light augmentations (flip, brightness/contrast, small rotation)
+    - Normalization compatible with ConvNeXtTinyOptimized
+    """
+    mean = (0.5, 0.5, 0.5) if rgb else (0.5,)
+    std = (0.5, 0.5, 0.5) if rgb else (0.5,)
+
+    if train:
+        return A.Compose([
+            A.Resize(size, size),
+            A.HorizontalFlip(p=0.5),
+            A.RandomBrightnessContrast(p=0.25),
+            A.ShiftScaleRotate(shift_limit=0.02, scale_limit=0.05, rotate_limit=10, border_mode=cv2.BORDER_REFLECT_101, p=0.25),
+            A.Normalize(mean=mean, std=std),
+            ToTensorV2(),
+        ])
+    else:
+        return A.Compose([
+            A.Resize(size, size),
+            A.Normalize(mean=mean, std=std),
+            ToTensorV2(),
+        ])
+
