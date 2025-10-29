@@ -37,6 +37,19 @@ class DropPath(nn.Module):
         # Scale output to preserve expected values
         return x.div(keep_prob) * random_tensor
 
+class LayerNorm2d(nn.Module):
+    """Applies LayerNorm correctly to BCHW tensors."""
+    def __init__(self, num_channels, eps=1e-6):
+        super().__init__()
+        self.norm = nn.LayerNorm(num_channels, eps=eps)
+
+    def forward(self, x):
+        # BCHW → BHWC → normalize → BCHW
+        x = x.permute(0, 2, 3, 1)
+        x = self.norm(x)
+        x = x.permute(0, 3, 1, 2)
+        return x
+    
 
 # ConvNeXt Block (main building unit)
 class ConvNeXtBlock(nn.Module):
@@ -94,20 +107,19 @@ class ConvNeXtTinyOptimized(nn.Module):
         dims = [96, 192, 384, 768]
         depths = [3, 3, 9, 3]
 
-        # Downsampling stem layers
+        
+        # Downsampling stem + layers
         self.downsample_layers = nn.ModuleList()
 
-        # Stage 0: Initial patch embedding (4x downsample)
         stem = nn.Sequential(
             nn.Conv2d(in_chans, dims[0], kernel_size=4, stride=4),
-            nn.LayerNorm(dims[0], eps=1e-6)
+            LayerNorm2d(dims[0])
         )
         self.downsample_layers.append(stem)
 
-        # Stages 1–3: further downsampling (2x each)
         for i in range(3):
             downsample = nn.Sequential(
-                nn.LayerNorm(dims[i], eps=1e-6),
+                LayerNorm2d(dims[i]),
                 nn.Conv2d(dims[i], dims[i + 1], kernel_size=2, stride=2),
             )
             self.downsample_layers.append(downsample)
