@@ -3,13 +3,13 @@ import random
 import argparse
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch import nn, optim
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 from collections import Counter
 from sklearn.model_selection import train_test_split
-
 from dataset import ADNIDataset, scan_folder, get_transforms
 from modules import ConvNeXtBinaryOptimized as ConvNeXtBinary
 
@@ -122,6 +122,13 @@ def main(args):
     os.makedirs(os.path.dirname(args.ckpt), exist_ok=True)
     best_val_acc, patience, max_patience = 0, 0, 5
 
+    history = {
+    "train_loss": [],
+    "val_loss": [],
+    "train_acc": [],
+    "val_acc": []
+    }
+
     # --- Training loop ---
     for epoch in range(1, args.epochs + 1):
         print(f"\nEpoch {epoch}/{args.epochs}")
@@ -130,6 +137,11 @@ def main(args):
 
         print(f"train_loss={tr_loss:.4f}, val_loss={val_loss:.4f}, "
               f"train_acc={tr_acc:.3f}, val_acc={val_acc:.3f}")
+        
+        history["train_loss"].append(tr_loss)
+        history["val_loss"].append(val_loss)
+        history["train_acc"].append(tr_acc)
+        history["val_acc"].append(val_acc)
 
         scheduler.step()
 
@@ -143,6 +155,35 @@ def main(args):
             if patience >= max_patience:
                 print("Early stopping triggered.")
                 break
+    # --- Plot training curves ---
+    plt.figure(figsize=(10, 4))
+
+    # Loss curve
+    plt.subplot(1, 2, 1)
+    plt.plot(history["train_loss"], label="Train Loss", color="blue")
+    plt.plot(history["val_loss"], label="Val Loss", color="orange")
+    plt.title("Loss over Epochs")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid(True)
+
+    # Accuracy curve
+    plt.subplot(1, 2, 2)
+    plt.plot(history["train_acc"], label="Train Acc", color="green")
+    plt.plot(history["val_acc"], label="Val Acc", color="red")
+    plt.title("Accuracy over Epochs")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("training_curves.png")
+    plt.close()
+
+    print("Saved training curves to training_curves.png")
+
 
     # --- Final test ---
     model.load_state_dict(torch.load(args.ckpt, map_location=device))
