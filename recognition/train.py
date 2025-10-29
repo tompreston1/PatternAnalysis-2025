@@ -120,7 +120,7 @@ def main(args):
     scheduler = warmup_scheduler(optimizer, warmup_epochs=5, total_epochs=args.epochs)
 
     os.makedirs(os.path.dirname(args.ckpt), exist_ok=True)
-    best_val_acc, patience, max_patience = 0, 0, 8
+    best_val_acc, patience, max_patience = 0, 0, 5
 
     # --- Training loop ---
     for epoch in range(1, args.epochs + 1):
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_root', required=True)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=1e-3)   
-    parser.add_argument('--epochs', type=int, default=60)
+    parser.add_argument('--epochs', type=int, default=25)
     parser.add_argument('--ckpt', default='checkpoints/best_model.pth')
     parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
