@@ -2,17 +2,11 @@
 modules.py
 ------------
 Task 8: Custom ConvNeXt-Tiny implementation (built from scratch).
-
-This version is designed specifically for small, medical-style datasets (e.g., ADNI MRI scans)
-where overfitting is common. It balances depth and regularization to achieve around ~0.8 F1
-on test data within 10-15 epochs.
-
-Author: Thomas Preston
 """
 
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class DropPath(nn.Module):
     """
@@ -168,13 +162,89 @@ class ConvNeXtTinyOptimized(nn.Module):
 
 # Binary Classification Wrapper
 class ConvNeXtBinaryOptimized(nn.Module):
-    """
-    Wrapper for binary classification tasks.
-    Outputs a single logit suitable for BCEWithLogitsLoss.
-    """
-    def __init__(self, in_chans=3):
+    def __init__(self, in_chans=3, num_classes=1, dropout=0.0):
         super().__init__()
-        self.backbone = ConvNeXtTinyOptimized(num_classes=1, in_chans=in_chans)
+
+        # --- Stage 1 ---
+        self.downsample_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv2d(in_chans, 96, kernel_size=4, stride=4),
+                nn.LayerNorm(96, eps=1e-6)
+            )
+        ])
+        self.stages = nn.ModuleList([
+            nn.Sequential(
+                *[self._make_block(96) for _ in range(3)],
+                nn.LayerNorm(96, eps=1e-6)
+            )
+        ])
+
+        # --- Stage 2 ---
+        self.downsample_layers.append(
+            nn.Sequential(
+                nn.Conv2d(96, 192, kernel_size=2, stride=2),
+                nn.LayerNorm(192, eps=1e-6)
+            )
+        )
+        self.stages.append(
+            nn.Sequential(
+                *[self._make_block(192) for _ in range(3)],
+                nn.LayerNorm(192, eps=1e-6)
+            )
+        )
+
+        # --- Stage 3 ---
+        self.downsample_layers.append(
+            nn.Sequential(
+                nn.Conv2d(192, 384, kernel_size=2, stride=2),
+                nn.LayerNorm(384, eps=1e-6)
+            )
+        )
+        self.stages.append(
+            nn.Sequential(
+                *[self._make_block(384) for _ in range(9)],
+                nn.LayerNorm(384, eps=1e-6)
+            )
+        )
+
+        # --- Stage 4 ---
+        self.downsample_layers.append(
+            nn.Sequential(
+                nn.Conv2d(384, 768, kernel_size=2, stride=2),
+                nn.LayerNorm(768, eps=1e-6)
+            )
+        )
+        self.stages.append(
+            nn.Sequential(
+                *[self._make_block(768) for _ in range(3)],
+                nn.LayerNorm(768, eps=1e-6)
+            )
+        )
+
+        # --- Classifier ---
+        self.global_pool = nn.AdaptiveAvgPool2d(1)
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(768, num_classes)
+
+    def _make_block(self, dim):
+        return nn.Sequential(
+            nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim),
+            nn.LayerNorm(dim, eps=1e-6),
+            nn.Linear(dim, 4 * dim),
+            nn.GELU(),
+            nn.Linear(4 * dim, dim)
+        )
+
+    def forward_features(self, x):
+        for i in range(4):
+            x = self.downsample_layers[i](x)
+            x = self.stages[i](x)
+        return x
 
     def forward(self, x):
-        return self.backbone(x)
+        x = self.forward_features(x)
+        x = self.global_pool(x).flatten(1)
+        x = self.dropout(x)
+        x = self.classifier(x)
+        return x
+
