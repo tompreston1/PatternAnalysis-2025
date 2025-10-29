@@ -74,14 +74,15 @@ def get_transforms(train=True, size=224, rgb=True):
 
     if train:
         return A.Compose([
-            A.Resize(size, size),
-            A.HorizontalFlip(p=0.5),
-            A.RandomBrightnessContrast(brightness_limit=0.15, contrast_limit=0.15, p=0.3),
-            A.ShiftScaleRotate(shift_limit=0.02, scale_limit=0.05, rotate_limit=8,
-                               border_mode=cv2.BORDER_REFLECT_101, p=0.25),
-            A.Normalize(mean=mean, std=std),
-            ToTensorV2(),
-        ])
+            A.Affine(scale=(0.9, 1.1), translate_percent=(0.02, 0.08), rotate=(-15, 15), shear=(-5, 5), p=0.6),
+            A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.4),
+            A.GaussNoise(var_limit=(5.0, 25.0), p=0.3),
+            A.GaussianBlur(blur_limit=(1, 3), p=0.2),
+            A.CoarseDropout(max_holes=8, max_height=16, max_width=16, fill_value=0, p=0.4),
+            A.Normalize(mean=(0.5,), std=(0.5,)),
+            ToTensorV2()
+])
+
     else:
         return A.Compose([
             A.Resize(size, size),
