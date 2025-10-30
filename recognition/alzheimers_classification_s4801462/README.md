@@ -246,7 +246,7 @@ When running experiments, there are two main options for accessing the data:
      python train.py --data_root /home/groups/comp3710/ADNI
      ```
 
-2. **Copy the dataset to your local machine:**  
+2. **Copy the dataset to your local machine (for uploading data to google drive):**  
    - You can transfer the dataset using **SCP** or a graphical SFTP client such as **FileZilla**.  
    - Example command (Mac/Linux terminal):  
      ```bash
@@ -256,7 +256,12 @@ When running experiments, there are two main options for accessing the data:
      ```bash
      python train.py --data_root ~/Desktop/ADNI
      ```
-
+3. **Run on google colab**:
+   - Upload data to google drive and mount the google drive to google colab
+   - Clone this repository in colab and run:
+        ```bash
+        !python /content/PatternAnalysis-2025/recognition/alzheimers_classification_s4801462/train.py --data_root "/content/drive/MyDrive/ADNI/AD_NC"
+        ```
 > **Note:** Training locally is only recommended for testing small subsets. Full ConvNeXt training should be run on the **Rangpur A100 GPU nodes**, as they provide sufficient VRAM and compute performance for the model.
 
 ---
