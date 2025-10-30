@@ -163,6 +163,8 @@ Alternatively, using Conda:
 ```bash
 conda create -n convnext python=3.11.5
 conda activate convnext
+git clone https://github.com/yourusername/PatternAnalysis-2025.git
+cd recognition/ADNI_ConvNeXt_ThomasPreston
 pip install -r requirements.txt
 ```
 
