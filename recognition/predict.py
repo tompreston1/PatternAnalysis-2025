@@ -60,10 +60,9 @@ def plot_sample_predictions(model, dataset, device, save_path="predictions_grid.
 
     # Sample evenly from both if possible
     n_half = n // 2
-    sampled_indices = (
-        np.random.choice(indices_correct, min(n_half, len(indices_correct)), replace=False).tolist()
-        + np.random.choice(indices_incorrect, min(n_half, len(indices_incorrect)), replace=False).tolist()
-    )
+    # Randomly sample n indices (correct or incorrect, mixed)
+    sampled_indices = np.random.choice(len(dataset), min(n, len(dataset)), replace=False)
+
 
     # Plot samples
     fig, axes = plt.subplots(2, 4, figsize=(16, 6))
