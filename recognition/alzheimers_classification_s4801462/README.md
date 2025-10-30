@@ -231,6 +231,34 @@ Outputs:
 - `images/predictions_grid.png`  
 - `images/training_curves.png`
 
+### 8.5 Dataset Access and Storage
+
+The **ADNI dataset** used in this project is available on the UQ HPC system at:
+```
+/home/groups/comp3710/ADNI/
+```
+When running experiments, there are two main options for accessing the data:
+
+1. **Run directly on Rangpur (recommended):**  
+   - SSH into the Rangpur cluster using your UQ student account.  
+   - You can reference the dataset path directly when running `train.py` or `predict.py`:  
+     ```bash
+     python train.py --data_root /home/groups/comp3710/ADNI
+     ```
+
+2. **Copy the dataset to your local machine:**  
+   - You can transfer the dataset using **SCP** or a graphical SFTP client such as **FileZilla**.  
+   - Example command (Mac/Linux terminal):  
+     ```bash
+     scp -r sXXXXXXX@login.rcc.uq.edu.au:/home/groups/comp3710/ADNI ~/Desktop/ADNI
+     ```
+   - Once copied locally, update your training command to point to the local path:  
+     ```bash
+     python train.py --data_root ~/Desktop/ADNI
+     ```
+
+> **Note:** Training locally is only recommended for testing small subsets. Full ConvNeXt training should be run on the **Rangpur A100 GPU nodes**, as they provide sufficient VRAM and compute performance for the model.
+
 ---
 
 ## 9. Project Structure
