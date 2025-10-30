@@ -137,10 +137,10 @@ Prediction results are visualized in a grid:
 
 | Metric | Validation | Test |
 |:--------|:------------|:------|
-| Accuracy | **0.993** | **0.783** |
-| ROC-AUC | 0.99 | 0.81 |
+| Accuracy | **0.993** | **0.803** |
+| ROC-AUC | 0.99 | 0.83 |
 
-Although validation accuracy approaches 99%, test accuracy remains at 78%, reflecting the challenge of generalization on small medical datasets.
+Although validation accuracy approaches 99%, test accuracy remains at 80%, reflecting the challenge of generalization on small medical datasets.
 
 <div align="center">
   <img src="images/training_curves.png" width="70%">
