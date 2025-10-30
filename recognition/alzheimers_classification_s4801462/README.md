@@ -3,7 +3,7 @@
 **Author:** Thomas Preston - s4801462  
 **Course:** COMP3710 – Pattern Recognition  
 **Task:** 8 – Recognition Problem (Hard Difficulty)  
-**Date:** October 2025  
+**Date:** 30th October 2025  
 
 ---
 
