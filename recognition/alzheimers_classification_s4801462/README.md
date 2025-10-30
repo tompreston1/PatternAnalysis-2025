@@ -12,6 +12,8 @@
 This project implements a ConvNeXt-based convolutional neural network (CNN) to classify **Alzheimer’s Disease (AD)** versus **Normal Control (NC)** brain MRI scans from the **ADNI (Alzheimer’s Disease Neuroimaging Initiative)** dataset.  
 The network is implemented entirely from scratch in PyTorch and achieves a **test accuracy above 0.8**, satisfying the requirements of the COMP3710 Recognition Problem (Hard Difficulty).
 
+The model was trained and evaluated on an **NVIDIA A100 GPU** using **Google Colab**, allowing efficient execution of large-scale experiments and accelerated convergence compared to CPU-only training.
+
 The goal is to design, train, and evaluate a modern CNN architecture that effectively distinguishes structural brain differences associated with Alzheimer’s disease.
 
 ---
