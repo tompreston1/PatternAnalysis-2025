@@ -1,6 +1,6 @@
 # Alzheimer’s Disease Classification using ConvNeXt
 
-**Author:** Thomas Preston  
+**Author:** Thomas Preston - s4801462
 **Course:** COMP3710 – Pattern Recognition  
 **Task:** 8 – Recognition Problem (Hard Difficulty)  
 **Date:** October 2025  
