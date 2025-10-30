@@ -260,7 +260,7 @@ When running experiments, there are two main options for accessing the data:
    - Upload data to google drive and mount the google drive to google colab
    - Clone this repository in colab and run:
         ```bash
-        !python /content/PatternAnalysis-2025/recognition/alzheimers_classification_s4801462/train.py --data_root "/content/drive/MyDrive/ADNI/AD_NC"
+        !python /content/PatternAnalysis-2025/recognition/alzheimers_classification_s4801462/train.py --data_root "/content/drive/MyDrive/ADNI/"
         ```
 > **Note:** Training locally is only recommended for testing small subsets. Full ConvNeXt training should be run on the **Rangpur A100 GPU nodes**, as they provide sufficient VRAM and compute performance for the model.
 
