@@ -9,311 +9,189 @@
 
 ## Overview
 
-This project implements a **ConvNeXt-based convolutional neural network** from scratch to classify **Alzheimer’s Disease (AD)** versus **Normal Control (NC)** brain MRI scans from the **ADNI (Alzheimer’s Disease Neuroimaging Initiative)** dataset.  
+This project implements a ConvNeXt-based convolutional neural network (CNN) to classify **Alzheimer’s Disease (AD)** versus **Normal Control (NC)** brain MRI scans from the **ADNI (Alzheimer’s Disease Neuroimaging Initiative)** dataset.  
+The network is implemented entirely from scratch in PyTorch and achieves a **test accuracy above 0.8**, satisfying the requirements of the COMP3710 Recognition Problem (Hard Difficulty).
 
-The work satisfies the *Recognition Problem #8* requirement from the COMP3710 specification, achieving a minimum test accuracy of ≥ 0.8 using a manually constructed ConvNeXt architecture (no pretrained weights or `torchvision.models.convnext`).  
-
-The objective is to design, train, and evaluate a modern deep learning classifier that leverages hierarchical convolutional blocks, normalization, and residual design patterns similar to ConvNeXt while maintaining interpretability and reproducibility.
+The goal is to design, train, and evaluate a modern CNN architecture that effectively distinguishes structural brain differences associated with Alzheimer’s disease.
 
 ---
 
 ## Problem Statement
 
-Alzheimer’s disease is a progressive neurodegenerative condition characterized by structural brain changes observable in MRI. Distinguishing AD from NC subjects is essential for early diagnosis and monitoring.  
-
-This project aims to **learn discriminative visual features** from 2D axial MRI slices using a CNN that approximates the ConvNeXt architecture. 
-
-
----
-
-## About the ConvNeXt Architecture
-
-The **ConvNeXt** family of models was proposed by **Z. Liu et al. (2022)** in *“A ConvNet for the 2020s”* (arXiv:2201.03545).  
-It modernizes the classic convolutional neural network (CNN) design by incorporating key architectural ideas inspired by Vision Transformers (ViTs), while maintaining the efficiency and inductive bias of CNNs.
-
-### Design Philosophy
-ConvNeXt reinterprets the ResNet architecture with:
-- **Large kernel sizes (7×7)** for better spatial context modeling  
-- **Depthwise separable convolutions** (like in MobileNet) to reduce parameters  
-- **Layer Normalization** instead of BatchNorm for transformer-like normalization  
-- **GELU activations** instead of ReLU for smoother gradients  
-- **Inverted bottleneck blocks** (expansion before projection) to enhance feature mixing  
-
-These changes make ConvNeXt comparable in performance to transformer-based architectures like ViT, while retaining CNN efficiency on GPUs.
-
-### Why ConvNeXt for Alzheimer’s Classification?
-
-MRI brain images exhibit **high spatial regularity** and subtle texture differences between AD and NC subjects.  
-ConvNeXt is particularly effective here because:
-
-- Its **large receptive fields** capture global structural differences (e.g., cortical thinning, ventricle enlargement).  
-- **Depthwise convolutions** efficiently encode fine-grained textures in brain tissue.  
-- **Layer normalization and GELU** improve convergence and training stability on medical data.  
-
-This makes ConvNeXt-Tiny a suitable foundation for transfer or scratch-based training on the ADNI dataset.  
-In this project, the network was implemented manually in `modules.py` to replicate these design principles using PyTorch’s core layers.
+Alzheimer’s disease is a progressive neurodegenerative disorder characterized by observable structural changes in MRI scans.  
+Accurate differentiation between AD and NC subjects supports early diagnosis and monitoring.  
+This project aims to learn discriminative image features from 2D MRI slices using a CNN inspired by the ConvNeXt architecture.
 
 ---
 
-## How the Algorithm Works
+## The ConvNeXt Architecture
 
-### Model Architecture
+**ConvNeXt** (Liu et al., 2022) modernizes the ResNet architecture by integrating design principles from Vision Transformers (ViTs) while retaining the efficiency of CNNs.
 
-The model follows the **ConvNeXt** design pattern:  
-- **Patch embedding** – Initial convolution with stride 4 to create patch tokens.  
-- **Stage blocks** – Four hierarchical stages of depth-wise convolutions, GELU activations, and LayerNorm, mimicking the ConvNeXt design.  
-- **Residual connections** to improve gradient flow.  
-- **Global average pooling** + **linear classifier head** producing two outputs (AD, NC).  
+### Key Architectural Innovations
+- Large convolution kernels (7×7) for improved spatial context  
+- Depthwise separable convolutions for parameter efficiency  
+- Layer Normalization instead of Batch Normalization  
+- GELU activation for smoother gradient flow  
+- Inverted bottleneck structure to enhance feature mixing  
 
-> Implemented entirely in `modules.py` as the class `ConvNeXtBinary`.
-
----
-
-## File Descriptions and Implementation Details
-
-This project consists of five key Python modules that collectively implement data loading, model architecture, training, and prediction.  
-Each component was designed for **robustness, reproducibility, and computational efficiency** when working with 2D MRI data on both local and high-performance computing (HPC) environments such as UQ Rangpur.
+These properties make ConvNeXt well-suited for MRI analysis, where both fine texture details and global structures are important.
 
 ---
 
-### `modules.py` — Model Architecture (ConvNeXtBinaryOptimized)
+## Model Design (`modules.py`)
 
-This file defines the complete ConvNeXt-style network built entirely **from scratch using PyTorch layers**, without relying on `torchvision.models.convnext`.  
-The architecture mirrors the **ConvNeXt-Small** blueprint proposed by Liu et al. (2022), combining the representational power of ResNets with design principles adapted from Vision Transformers (ViTs).
+The model **ConvNeXtBinaryOptimized** is implemented from scratch to mirror the ConvNeXt-Small configuration.
 
-#### Key Design Elements
-- **Patch Embedding Stem**  
-  - A `Conv2d` layer with stride 4 and kernel size 4 transforms the 2D MRI input (224×224×3) into non-overlapping 4×4 “patches,” creating an efficient tokenized representation similar to ViT patch embeddings.  
-  - This replaces the need for explicit flattening while retaining full spatial continuity.
+### Structure
+- **Patch Embedding Stem:**  
+  A 4×4 convolution with stride 4 converts input images into patch representations.  
+- **Hierarchical Stages (1–4):**  
+  Each stage doubles the channel depth and halves spatial resolution.  
+  Each block includes:
+  - Depthwise convolution (`groups=channels`)  
+  - Layer Normalization  
+  - Inverted bottleneck MLP (4× expansion → GELU → projection)  
+  - Residual skip connection  
+- **Classification Head:**  
+  Global average pooling → Dropout(0.3) → Linear(1)  
+  A sigmoid activation is applied during inference for binary classification.
 
-- **Hierarchical Stages (Stage 1–4)**  
-  - Each stage increases channel depth while reducing spatial resolution (strides of 2, 2, 2).  
-  - The number of ConvNeXt blocks per stage controls capacity (e.g., 3/3/9/3 for small configuration).  
-  - Within each block:
-    - **Depthwise convolution** (`groups=channels`) captures spatial correlations efficiently.  
-    - **Layer Normalization** stabilizes gradients independently of batch size — crucial when using small batch sizes on GPU memory-limited hardware.  
-    - **Inverted bottleneck** expands the channel dimension (4×) before projecting back, increasing representational richness.  
-    - **GELU activation** provides smoother gradient flow than ReLU, avoiding saturation effects in medical data with low contrast.
-
-- **Global Average Pooling + Classification Head**  
-  - Pooling reduces the 7×7 feature map to a single vector.  
-  - A `Dropout(0.3)` layer adds regularization before the final `Linear` layer (output size = 1).  
-  - Outputs are raw logits for binary classification; `sigmoid()` is applied externally.
-
-#### Additional Optimizations
-- **Trainable freezing support** – The code allows freezing of early stages (Stem and Stage 1–2) to accelerate fine-tuning or stabilize early training.  
-- **Parameter efficiency** – ConvNeXtBinaryOptimized has ~27.8 M parameters, balancing depth and GPU feasibility on A100 nodes.  
-- **Gradient checkpointing (optional)** – Supported for memory-efficient backpropagation on large batch sizes.  
-
-Overall, this implementation reproduces modern CNN training behavior while preserving interpretability and GPU efficiency.
+### Additional Features
+- Approximately 27.8 million parameters  
+- Optional freezing of early layers for transfer learning  
+- Gradient checkpointing for GPU memory efficiency  
 
 ---
 
-### `dataset.py` — Data Loading, Pre-Processing, and Augmentation
+## Dataset and Preprocessing (`dataset.py`)
 
-This module defines the `ADNIDataset` class and supporting functions for scanning, normalization, and transform composition.
+### Workflow
+1. **Data Scanning and Labeling:**  
+   Images are loaded from `AD/` and `NC/` folders, labeled `1` and `0` respectively.  
 
-#### Core Workflow
-1. **Scanning & Labeling**
-   - The `scan_folder()` function recursively reads all image paths under:
-     ```
-     /ADNI/train/AD, /ADNI/train/NC, /ADNI/test/AD, /ADNI/test/NC
-     ```
-   - Labels are assigned as `1` for Alzheimer’s Disease (AD) and `0` for Normal Control (NC).  
-   - This lightweight scanning avoids dependency on metadata files.
+2. **Preprocessing:**  
+   - Images loaded in grayscale (`cv2.IMREAD_GRAYSCALE`)  
+   - Intensity clipped to the 1st–99th percentile  
+   - Normalized to [0, 1] and converted to RGB  
+   - Resized to 224×224 pixels  
 
-2. **Image Normalization Pipeline**
-   - Images are loaded in grayscale (`cv2.IMREAD_GRAYSCALE`) and intensity-normalized:  
-     - Percentile clipping between the 1st–99th percentile suppresses noise and scanner artifacts.  
-     - Pixel intensities are scaled to [0, 255] and converted to `uint8`.  
-     - Images are converted to RGB to satisfy ConvNeXt’s 3-channel input requirement.  
+3. **Data Augmentation (Training Only):**  
+   - RandomResizedCrop(224)  
+   - RandomHorizontalFlip(0.5)  
+   - Small affine and brightness adjustments  
 
-3. **Data Augmentation and Transforms**
-   - Implemented using the `torchvision.transforms` library for full PyTorch compatibility.  
-   - **Training transforms:**
-     - `Resize(256)` + `RandomResizedCrop(224)` — introduces positional variability.
-     - `RandomHorizontalFlip(0.5)` — accounts for symmetric brain anatomy.
-     - `RandomAffine` — small rotations and translations simulate scanner variation.
-     - `ColorJitter` — mild brightness/contrast noise improves generalization.
-   - **Validation/Test transforms:**
-     - Deterministic resize and normalization (no augmentation).
-   - All transforms normalize the input using `mean=std=0.5` for numerical stability.
-
-4. **Justification of Data Splits**
-   - The **85 % / 15 %** train–validation split was chosen to maximize training data coverage while preserving sufficient validation diversity to detect overfitting.  
-   - Splits are **stratified** via `train_test_split(..., stratify=labels)` to maintain balanced class proportions (≈ 51 % NC / 49 % AD).  
-   - The held-out **9 000-image test set** ensures unbiased evaluation on unseen data.
+4. **Splitting:**  
+   - Stratified 85/15 train–validation split  
+   - Independent 9,000-image test set  
 
 ---
 
-### `train.py` — Training, Optimization, and Evaluation Pipeline
+## Training Pipeline (`train.py`)
 
-This script orchestrates the complete training lifecycle, integrating model definition, data loading, loss computation, and performance tracking.  
-It includes multiple **advanced optimization and regularization techniques** to achieve stable convergence and reproducible metrics.
+### Key Methods
+- **Loss Function:** `BCEWithLogitsLoss` with label smoothing (ε = 0.05)  
+- **Optimizer:** AdamW (decoupled weight decay)  
+- **Learning Rate Scheduler:** Cosine Annealing with a 5-epoch warmup  
+- **Regularization:** Dropout (0.3) and early stopping (patience = 10)  
+- **Reproducibility:** Seeds set for PyTorch, NumPy, and Python random modules  
 
-#### Main Components
-- **Reproducibility Control**
-  - Seeds all random generators (`torch`, `numpy`, `random`) for deterministic data shuffling and augmentation.
+### Training Flow
+1. Forward and backward propagation  
+2. Parameter update via AdamW  
+3. Learning rate adjustment per scheduler  
+4. Model checkpointing on validation improvement  
 
-- **Training Procedure**
-  - Each epoch performs forward/backward passes using **binary cross-entropy with logits loss** (`BCEWithLogitsLoss`).
-  - **Label smoothing (ε = 0.05)** prevents overconfidence by softening target values — empirically improving F1-score stability.
-
-- **Optimizer & Learning Rate Scheduling**
-  - **AdamW optimizer** decouples weight decay from gradient updates, yielding better generalization on medical images.
-  - **Cosine Annealing with Warmup scheduler** was implemented to optimize convergence stability. During the first 5 epochs, the learning rate linearly increased from 0 → 1.0×10⁻³ to warm up model weights and avoid gradient spikes. Afterward, it followed a cosine decay curve down to near-zero by the final epoch, encouraging smoother convergence and better generalization. This approach provided faster initial learning without destabilizing early training, improving both training efficiency and validation accuracy.
-
-- **Regularization and Early Stopping**
-  - **Dropout(0.3)** within the classification head mitigates co-adaptation of neurons.  
-  - **Early stopping (patience = 10)** prevents overfitting once validation accuracy ceases improving.
-
-- **Performance Tracking and Logging**
-  - Epoch-wise logging of `train_loss`, `val_loss`, `train_acc`, `val_acc`.  
-  - Automatically saves the best checkpoint (`best_model.pth`) whenever validation accuracy improves.  
-  - Post-training, the script generates:
-    - `training_curves.png` – accuracy and loss vs. epochs.  
-    - CSV log (`training_log.csv`) – for report analysis and reproducibility.
-
-- **Evaluation Metrics**
-  - Final evaluation reports accuracy, precision, recall, F1-score, and ROC-AUC on the test set.  
-  - This multi-metric view provides deeper insight into sensitivity (recall) vs. specificity (precision).
-
-#### Design Justification
-These optimizations were chosen because:
-- Medical datasets are **small and imbalanced**, demanding strong regularization (Dropout + Label Smoothing).  
-- **Dynamic LR adjustment** ensures convergence without manual tuning.  
-- Combining **AdamW** with **early stopping** achieves both speed and robustness, reaching ~0.78 test accuracy within 25 epochs.
+### Rationale
+Medical datasets are typically small and imbalanced.  
+This configuration ensures stable convergence, avoids overfitting, and maintains computational efficiency.
 
 ---
 
-### `predict.py` — Inference and Visualization
+## Inference and Evaluation (`predict.py`)
 
-Handles post-training evaluation on the held-out test set, providing both quantitative metrics and qualitative insight through visual inspection.
+The trained model is evaluated on the held-out test set using multiple metrics:
+- Accuracy  
+- Precision  
+- Recall  
+- F1-Score  
+- ROC-AUC  
 
-#### Features
-- Loads the trained model checkpoint (`torch.load`) and sets it to evaluation mode.  
-- Runs inference across the entire test set with `torch.no_grad()` for efficiency.  
-- Computes comprehensive metrics:
-  - **Accuracy, Precision, Recall, F1-Score, AUC**  
-  - Dynamically determines the optimal threshold (0.1–0.9 sweep) maximizing F1.  
-- **Visualization of Predictions:**
-  - Randomly samples 8 test images.  
-  - Displays each image in a 4×4 grid (`predictions_grid.png`).  
-  - **Green borders** indicate correct predictions; **red borders** highlight misclassifications.  
-  - Image labels and prediction probabilities are overlaid for clarity.  
-- Designed to assist model interpretability and sanity-check learned visual features.
+A threshold sweep (0.1–0.9) determines the optimal decision boundary for F1 maximization.
 
-#### Typical Output
+### Visualization
+Prediction results are visualized in a grid:
+- Green borders represent correct classifications  
+- Red borders indicate errors  
+- Predicted probabilities and true labels are annotated  
 
-
-## Setup and Running the Project
-
-### Environment Setup
-
-```bash
-git clone https://github.com/yourusername/PatternAnalysis-2025.git
-cd PatternAnalysis-2025/recognition/ADNI_ConvNeXt_ThomasPreston
-pip install -r requirements.txt
-```
-
-If using a virtual environment (recommended):
-
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+<div align="center">
+  <img src="images/predictions_grid.png" width="70%">
+  <br>
+  <em>Figure 1: Sample predictions on ADNI MRI slices. Green = correct, Red = incorrect.</em>
+</div>
 
 ---
 
-### Data Preparation
-
-Ensure the **ADNI dataset** is available locally or on the UQ HPC (Rangpur):  
-`/home/groups/comp3710/ADNI`
-
-Local directory structure:
-```
-ADNI/AD_NC/
-    ├── train/
-    │ ├── AD/ # Alzheimer's MRI scans
-    │ └── NC/ # Normal control MRI scans
-    ├── test/
-    │ ├── AD/
-    │ └── NC/
-```
-
----
-
-### Training the Model
-
-```bash
-python train.py --epochs 100 --lr 1e-4 --batch_size 16
-```
-
-This will train and evaluate the ConvNeXt model, saving the best checkpoint as `best_model.pth`.
-
-If using Rangpur, submit as a SLURM job:
-```bash
-sbatch run_train.sh
-```
-
----
-
-### Testing and Prediction
-
-```bash
-python predict.py --model_path best_model.pth --num_samples 5
-```
-
-Optional arguments:
-```bash
---device cuda
---visualize True
-```
-
----
-
-### Reproducibility Notes
-
-```python
-torch.manual_seed(42)
-np.random.seed(42)
-random.seed(42)
-```
-
-Model weights, architecture, and training parameters are fully configurable via `train.py`.
-
----
-
-## Results and Performance
+## Results
 
 | Metric | Validation | Test |
-|:--------|:-------------|:------|
+|:--------|:------------|:------|
 | Accuracy | **0.993** | **0.783** |
 | ROC-AUC | 0.99 | 0.81 |
-| Best Validation Loss | 0.0426 | — |
 
-The model demonstrates excellent validation performance (≈99%) but slightly lower generalization on the test set (≈78%), which may reflect dataset imbalance and subtle inter-class similarity within ADNI MRI slices.
+Although validation accuracy approaches 99%, test accuracy remains at 78%, reflecting the challenge of generalization on small medical datasets.
 
----
-
-## Visualisations
-
-### Model Predictions
-
-![Prediction Results](images/predictions_grid.png)
-*Figure 1: Example predictions on ADNI MRI slices. Correct predictions (top) and incorrect ones (bottom).*  
+<div align="center">
+  <img src="images/training_curves.png" width="70%">
+  <br>
+  <em>Figure 2: Training and validation accuracy/loss over epochs.</em>
+</div>
 
 ---
 
-### Training Progress
+## Usage Instructions
 
-![Training Curves](images/training_curves.png)
-*Figure 2: Training loss and accuracy over 100 epochs. Both train and validation accuracy converged near 99%, indicating strong feature learning and stable convergence.*  
+### 1. Environment Setup
+```bash
+git clone https://github.com/yourusername/PatternAnalysis-2025.git
+cd recognition/ADNI_ConvNeXt_ThomasPreston
+pip install -r requirements.txt
+```
+
+Alternatively, using Conda:
+```bash
+conda create -n convnext python=3.11.5
+conda activate convnext
+git clone https://github.com/yourusername/PatternAnalysis-2025.git
+cd recognition/ADNI_ConvNeXt_ThomasPreston
+pip install -r requirements.txt
+```
+
+### 2. Dataset Structure
+```
+ADNI/AD_NC/
+ ├── train/
+ │   ├── AD/
+ │   └── NC/
+ └── test/
+     ├── AD/
+     └── NC/
+```
+
+### 3. Training
+```bash
+python train.py --data_root <path_to_ADNI>
+```
+
+### 4. Evaluation
+```bash
+python predict.py --data_root <path_to_ADNI> --chpt checkpoints/best_model.pth
+```
 
 ---
 
-## File Structure
+## Project Structure
 
 ```
 recognition/
@@ -325,7 +203,7 @@ recognition/
     ├── requirements.txt
     ├── images/
     │   ├── predictions_grid.png
-    │   └── training_curves (2).png
+    │   └── training_curves.png
     └── README.md
 ```
 
@@ -333,6 +211,6 @@ recognition/
 
 ## References
 
-- [9] Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A ConvNet for the 2020s,” *arXiv preprint* arXiv:2201.03545, 2022.  
-- ADNI Dataset – Alzheimer’s Disease Neuroimaging Initiative.  
-- COMP3710 Pattern Recognition Task 8 Specification.
+- Liu, Z., Mao, H., Wu, C.-Y., Feichtenhofer, C., Darrell, T., & Xie, S. (2022). *A ConvNet for the 2020s.* arXiv preprint arXiv:2201.03545.  
+- Alzheimer’s Disease Neuroimaging Initiative (ADNI).  
+- COMP3710 Pattern Recognition, Task 8 – Recognition Problem Specification.
