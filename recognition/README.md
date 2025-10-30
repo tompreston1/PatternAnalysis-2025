@@ -115,10 +115,7 @@ This module defines the `ADNIDataset` class and supporting functions for scannin
 
 #### Core Workflow
 1. **Scanning & Labeling**
-   - The `scan_folder()` function recursively reads all image paths under:
-     ```
-     /ADNI/train/AD, /ADNI/train/NC, /ADNI/test/AD, /ADNI/test/NC
-     ```
+   - The `scan_folder()` function recursively reads all image paths
    - Labels are assigned as `1` for Alzheimer’s Disease (AD) and `0` for Normal Control (NC).  
    - This lightweight scanning avoids dependency on metadata files.
 
@@ -218,9 +215,11 @@ pip install -r requirements.txt
 
 If using a virtual environment (recommended):
 
+[conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
+
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+conda create -n env python=3.11.5
+conda activate env
 pip install -r requirements.txt
 ```
 
@@ -247,28 +246,22 @@ ADNI/AD_NC/
 ### Training the Model
 
 ```bash
-python train.py --epochs 100 --lr 1e-4 --batch_size 16
+python train.py --data_root <file_path to ADNI folder>
 ```
 
-This will train and evaluate the ConvNeXt model, saving the best checkpoint as `best_model.pth`.
-
-If using Rangpur, submit as a SLURM job:
-```bash
-sbatch run_train.sh
-```
+This will train and evaluate the ConvNeXt model, saving the best checkpoint as `checkpoints/best_model.pth` in your current directory.
 
 ---
 
 ### Testing and Prediction
 
 ```bash
-python predict.py --model_path best_model.pth --num_samples 5
+python predict.py --data_root <file_path to ADNI folder>
 ```
 
 Optional arguments:
 ```bash
---device cuda
---visualize True
+--chpt <checkpoint_filepath>
 ```
 
 ---
