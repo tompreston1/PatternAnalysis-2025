@@ -149,6 +149,7 @@ This ensures smooth convergence and stable late-epoch learning.
 ### 7.2 Prediction Interpretation
 
 **Figure 1.** Example predictions on unseen ADNI MRI slices.  
+![Prediction Results](images/predictions_grid.png)
 
 The grid visualizes model predictions for eight samples, annotated with predicted labels, confidence scores, and ground-truths.
 
@@ -166,6 +167,7 @@ These patterns show the model’s ability to prioritize diagnostic certainty and
 ### 7.3 Training Behaviour
 
 **Figure 2.** Training and validation curves for loss (left) and accuracy (right).  
+![Training Curves](images/training_curves.png)
 
 #### (a) Loss Curves  
 - Both training and validation losses decline steadily across epochs.  
