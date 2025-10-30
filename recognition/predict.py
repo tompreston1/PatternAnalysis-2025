@@ -90,7 +90,7 @@ def main(data_root, ckpt_path, batch_size):
     print(f"Using device: {device}")
 
     # Load test data
-    test_dir = os.path.join(data_root, "test")
+    test_dir = os.path.join(data_root, "AD_NC/test")
     test_samples = scan_folder(test_dir)
     transform_eval = get_transforms(train=False)
     test_ds = ADNIDataset(test_samples, transform=transform_eval)

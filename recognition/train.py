@@ -72,8 +72,8 @@ def main(args):
     print(f"Using device: {device}")
 
     # --- Load dataset ---
-    train_dir = os.path.join(args.data_root, "train")
-    test_dir = os.path.join(args.data_root, "test")
+    train_dir = os.path.join(args.data_root, "AD_NC/train")
+    test_dir = os.path.join(args.data_root, "AD_NC/test")
 
     train_samples = scan_folder(train_dir)
     test_samples = scan_folder(test_dir)
