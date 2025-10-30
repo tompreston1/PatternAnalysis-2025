@@ -5,7 +5,7 @@
 **Task:** 8 – Recognition Problem (Hard Difficulty)  
 **Date:** October 2025  
 
--
+---
 
 ## Overview
 
