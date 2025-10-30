@@ -21,10 +21,8 @@ The objective is to design, train, and evaluate a modern deep learning classifie
 
 Alzheimer’s disease is a progressive neurodegenerative condition characterized by structural brain changes observable in MRI. Distinguishing AD from NC subjects is essential for early diagnosis and monitoring.  
 
-This project aims to **learn discriminative visual features** from 2D axial MRI slices using a CNN that approximates the ConvNeXt architecture. The classifier outputs the probability of an image belonging to either class:  
-\[
-P(y = \text{AD} \mid x), \; P(y = \text{NC} \mid x)
-\]
+This project aims to **learn discriminative visual features** from 2D axial MRI slices using a CNN that approximates the ConvNeXt architecture. 
+
 
 ---
 
@@ -33,7 +31,7 @@ P(y = \text{AD} \mid x), \; P(y = \text{NC} \mid x)
 The **ConvNeXt** family of models was proposed by **Z. Liu et al. (2022)** in *“A ConvNet for the 2020s”* (arXiv:2201.03545).  
 It modernizes the classic convolutional neural network (CNN) design by incorporating key architectural ideas inspired by Vision Transformers (ViTs), while maintaining the efficiency and inductive bias of CNNs.
 
-### 🔹 Design Philosophy
+### Design Philosophy
 ConvNeXt reinterprets the ResNet architecture with:
 - **Large kernel sizes (7×7)** for better spatial context modeling  
 - **Depthwise separable convolutions** (like in MobileNet) to reduce parameters  
@@ -42,20 +40,6 @@ ConvNeXt reinterprets the ResNet architecture with:
 - **Inverted bottleneck blocks** (expansion before projection) to enhance feature mixing  
 
 These changes make ConvNeXt comparable in performance to transformer-based architectures like ViT, while retaining CNN efficiency on GPUs.
-
-### ConvNeXt-Tiny
-
-The **ConvNeXt-Tiny** variant is a lightweight version optimized for smaller datasets and faster training.  
-Its configuration is summarized as follows:
-
-| Stage | Channels | Depth | Patch Size / Stride | Notes |
-|:-------|:----------|:------|:--------------------|:------|
-| Stem | 96 | 1 | 4×4 | Converts input image to patch embeddings |
-| Stage 1 | 96 | 3 | 1×1 | Shallow features |
-| Stage 2 | 192 | 3 | 2×2 | Mid-level abstraction |
-| Stage 3 | 384 | 9 | 2×2 | Deep spatial reasoning |
-| Stage 4 | 768 | 3 | 2×2 | Global feature aggregation |
-| Head | — | — | — | Global average pooling + linear classifier |
 
 ### Why ConvNeXt for Alzheimer’s Classification?
 
@@ -75,30 +59,13 @@ In this project, the network was implemented manually in `modules.py` to replica
 
 ### Model Architecture
 
-The model follows the **ConvNeXt-Small** design pattern:  
+The model follows the **ConvNeXt** design pattern:  
 - **Patch embedding** – Initial convolution with stride 4 to create patch tokens.  
 - **Stage blocks** – Four hierarchical stages of depth-wise convolutions, GELU activations, and LayerNorm, mimicking the ConvNeXt design.  
 - **Residual connections** to improve gradient flow.  
 - **Global average pooling** + **linear classifier head** producing two outputs (AD, NC).  
 
 > Implemented entirely in `modules.py` as the class `ConvNeXtBinary`.
-
----
-
-### Data Loading and Preprocessing
-
-- Implemented in `dataset.py`.  
-- The loader scans the `ADNI/AD_NC/` directory structure:
-  ```
-  ADNI/
-    ├── AD/
-    └── NC/
-  ```
-- Each `.nii` or `.nii.gz` MRI slice is:
-  - Loaded via **Nibabel**.
-  - Intensity-normalized to zero mean, unit variance.  
-  - Randomly augmented (rotation, noise, cutout) for robustness.  
-  - Converted into 3-channel tensors (for compatibility with ConvNeXt blocks).
 
 ---
 
