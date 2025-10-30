@@ -54,12 +54,6 @@ def plot_sample_predictions(model, dataset, device, save_path="predictions_grid.
         preds.append(pred)
         trues.append(label)
 
-    # Identify correct and incorrect predictions
-    indices_correct = [i for i in range(len(dataset)) if preds[i] == trues[i]]
-    indices_incorrect = [i for i in range(len(dataset)) if preds[i] != trues[i]]
-
-    # Sample evenly from both if possible
-    n_half = n // 2
     # Randomly sample n indices (correct or incorrect, mixed)
     sampled_indices = np.random.choice(len(dataset), min(n, len(dataset)), replace=False)
 
