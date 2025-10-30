@@ -155,7 +155,7 @@ The grid visualizes model predictions for eight samples, annotated with predicte
 
 | Observation | Description |
 |--------------|--------------|
-| **Correct classifications (6/8)** | High-confidence predictions (>0.95) demonstrate the model’s reliability on clearly distinguishable brain structures. |
+| **Correct classifications (6/8)** | High-confidence predictions demonstrate the model’s reliability on clearly distinguishable brain structures. |
 | **False negatives** | Occur primarily in low-contrast slices where AD features are subtle. |
 | **False positives** | Typically caused by anatomical irregularities that visually resemble AD (e.g., enlarged ventricles in normal aging). |
 | **Confidence calibration** | Correct predictions maintain higher confidence, while errors exhibit low certainty (0.02–0.38), indicating well-calibrated output probabilities. |
