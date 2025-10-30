@@ -154,8 +154,7 @@ Although validation accuracy approaches 99%, test accuracy remains at 78%, refle
 
 ### 1. Environment Setup
 ```bash
-git clone https://github.com/yourusername/PatternAnalysis-2025.git
-cd recognition/ADNI_ConvNeXt_ThomasPreston
+cd PatternAnalysis-2025/recognition/alzheimers_classification_s4801462
 pip install -r requirements.txt
 ```
 
@@ -163,8 +162,7 @@ Alternatively, using Conda:
 ```bash
 conda create -n convnext python=3.11.5
 conda activate convnext
-git clone https://github.com/yourusername/PatternAnalysis-2025.git
-cd recognition/ADNI_ConvNeXt_ThomasPreston
+cd PatternAnalysis-2025/recognition/alzheimers_classification_s4801462
 pip install -r requirements.txt
 ```
 
@@ -194,17 +192,18 @@ python predict.py --data_root <path_to_ADNI> --chpt checkpoints/best_model.pth
 ## Project Structure
 
 ```
-recognition/
-└── ADNI_ConvNeXt_ThomasPreston/
-    ├── dataset.py
-    ├── modules.py
-    ├── train.py
-    ├── predict.py
-    ├── requirements.txt
-    ├── images/
-    │   ├── predictions_grid.png
-    │   └── training_curves.png
-    └── README.md
+
+PatternAnalysis-2025/recognition/
+                      └── alzheimers_classification_s4801462
+                          ├── dataset.py
+                          ├── modules.py
+                          ├── train.py
+                          ├── predict.py
+                          ├── requirements.txt
+                          ├── images/
+                          │   ├── predictions_grid.png
+                          │   └── training_curves.png
+                          └── README.md
 ```
 
 ---
